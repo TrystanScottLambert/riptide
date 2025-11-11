@@ -6,9 +6,77 @@ from dataclasses import dataclass
 
 
 from filter_check import validate_filter, valid_filters
-
+MAX_COLUMN_LENGTH = 30
 EXCEPTIONS = ["uberID"]
 NOT_ALLOWED = ["fred", "bob", "thing", "something"]
+PROTECTED_WORD_LIST = {
+    "ra": [
+        "ascension", "r.a.", "r a", "ra_deg", "ra (deg)", "ra degrees", "right_ascension", "ra_degrees"
+    ],
+    "dec": [
+        "declination", "dec_deg", "dec (deg)", "dec degrees", "decl."
+    ],
+    "vel": [
+        "velocity", "vel_kms", "v_los", "vlos", "v_rad", "v(km/s)", "radial velocity"
+    ],
+    "mag": [
+        "magnitude", "app_mag", "apparent magnitude", "m_app"
+    ],
+    "mag_abs": [
+        "absolute magnitude", "m_abs", "abs_mag", "Mmag", "M_abs"
+    ],
+    "err": [
+        "error", "uncertainty", "sigma", "stddev", "std", "measurement error"
+    ],
+    "flux_density": [
+        "flux density", "f_nu", "fnu", "f_lambda", "flam", "fluxdens", "Snu"
+    ],
+    "flux": [
+        "total flux", "measured flux", "int_flux", "integrated flux", "f"
+    ],
+    "luminosity": [
+        "lum", "luminosity (erg/s)", "Lbol", "L_sun", "bolometric luminosity"
+    ],
+    "mass": [
+        "stellar mass", "M", "Msol", "mass_msun", "mstar", "Mstar"
+    ],
+    "sfr": [
+        "star formation rate", "SFR", "SFR_msun_yr", "sfr(msun/yr)"
+    ],
+    "metallicity": [
+        "gas metallicity", "stellar metallicity", "metal abundance"
+    ],
+    "redshift": [
+        "zobs", "z_spec", "z_phot", "spectroscopic redshift", "photometric redshift", "zcos", "z_obs"
+    ],
+    "snr": [
+        "signal to noise", "S/N", "sn_ratio", "signal/noise", "sn"
+    ],
+    "ew": [
+        "equivalent width", "eq width", "EW_line", "eqw"
+    ],
+    "radius": [
+        "rad", "r_phys", "r_ang", "radii", "object radius", "r (arcsec)", "r (kpc)"
+    ],
+    "sersic_index": [
+        "n_sersic", "sersic n", "sersicn", "Sérsic index", "SersicN"
+    ],
+    "axrat": [
+        "axis ratio", "axial ratio", "b/a", "ellipticity", "axisratio"
+    ],
+    "ang": [
+        "angle", "angular measurement", "ang (deg)", "angular size", "theta", "phi"
+    ],
+    "pos_ang": [
+        "position angle", "pa", "posang", "P.A.", "PA(deg)", "position angle (deg)"
+    ],
+    "line_width": [
+        "linewidth", "line width", "FWHM", "sigma_line", "velocity width", "dispersion"
+    ],
+    "sep": [
+        "separation", "sep_dist", "distance between", "angular separation", "physical separation"
+    ]
+}
 
 
 def check_allowed(name: str) -> bool:
@@ -19,6 +87,17 @@ def check_allowed(name: str) -> bool:
         if na in name:
             return False, na
     return True, None
+
+def check_protected(name: str) -> bool:
+    """
+    Checks that protected names aren't being used in the tables.
+    """
+    for protected_word, common_words in PROTECTED_WORD_LIST.items():
+        for word in common_words:
+            for target_word in name.split('_'):
+                if word.lower() == target_word.lower():
+                    return (False, protected_word)
+    return (True, None)
 
 
 def check_exceptions(name: str) -> bool:
@@ -89,9 +168,11 @@ class ColumnNameReport:
     filter_name: bool
     allowed_words: bool
     no_exception_violation: bool
+    not_protected: bool
     not_allowed_words: str | None
     suggested_filter_name: str | None
     exception_word: str | None
+    protected_word: str | None 
 
     def print_report(self):
         """
@@ -165,6 +246,16 @@ class ColumnNameReport:
             f"  Exception words in correct case:              {exception_status}{exception_info}"
         )
 
+        
+        protected_status = status(self.not_protected)
+        protected_info = ""
+        if not self.not_protected and self.protected_word:
+            protected_info = f"\n    {YELLOW}→ Required: Use correct form maybe '{self.protected_word}'?{RESET}"
+        print(
+            f"  Not violating protected standards:            {protected_status}{protected_info}"
+        )
+
+
         allowed_status = status(self.allowed_words)
         allowed_info = ""
         if not self.allowed_words and self.not_allowed_words:
@@ -182,12 +273,13 @@ def check_column_name(name: str) -> ColumnNameReport:
     """
     alphanumeric = check_alphanumeric(name)
     letter_start = check_alphabetical_start(name)
-    valid_length = len(name) < 30
+    valid_length = len(name) < MAX_COLUMN_LENGTH
     snake_case = check_snake_case(name)
     no_decimals = "." not in name
     valid_filter, suggested_filter = validate_filter(name)
     allowed, banned_word = check_allowed(name)
     violates_exception, exception_word = check_exceptions(name)
+    not_protected_word, protected_word = check_protected(name)
     is_valid = all(
         [
             alphanumeric,
@@ -198,6 +290,7 @@ def check_column_name(name: str) -> ColumnNameReport:
             valid_filter,
             allowed,
             violates_exception,
+            not_protected_word,
         ]
     )
     return ColumnNameReport(
@@ -214,4 +307,8 @@ def check_column_name(name: str) -> ColumnNameReport:
         not_allowed_words=banned_word,
         no_exception_violation=violates_exception,
         exception_word=exception_word,
+        not_protected=not_protected_word,
+        protected_word=protected_word,
     )
+
+
