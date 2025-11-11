@@ -5,7 +5,7 @@ Module for validating parquet data ensuring tables follow the style standards.
 from dataclasses import dataclass
 
 
-from filter_check import validate_filter_name, valid_filters
+from filter_check import validate_filter, valid_filters
 
 EXCEPTIONS = ["uberID"]
 NOT_ALLOWED = ["fred", "bob", "thing", "something"]
@@ -185,8 +185,7 @@ def check_column_name(name: str) -> ColumnNameReport:
     valid_length = len(name) < 30
     snake_case = check_snake_case(name)
     no_decimals = "." not in name
-    valid_filter, suggested_filter = validate_filter_name(name)
-    print(valid_filter, suggested_filter)
+    valid_filter, suggested_filter = validate_filter(name)
     allowed, banned_word = check_allowed(name)
     violates_exception, exception_word = check_exceptions(name)
     is_valid = all(
