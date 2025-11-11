@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from filter_check import validate_filter, valid_filters
 MAX_COLUMN_LENGTH = 30
 EXCEPTIONS = ["uberID"]
-NOT_ALLOWED = ["fred", "bob", "thing", "something"]
+NOT_ALLOWED = ["fred", "bob", "thing", "something", "fr3d", "fr_ed"]
 PROTECTED_WORD_LIST = {
     "ra": [
         "ascension", "r.a.", "r a", "ra_deg", "ra (deg)", "ra degrees", "right_ascension", "ra_degrees"
@@ -38,7 +38,7 @@ PROTECTED_WORD_LIST = {
         "lum", "luminosity (erg/s)", "Lbol", "L_sun", "bolometric luminosity"
     ],
     "mass": [
-        "stellar mass", "M", "Msol", "mass_msun", "mstar", "Mstar"
+        "stellar mass", "M", "Msol", "mass_msun", "mstar", "Mstar", "msun"
     ],
     "sfr": [
         "star formation rate", "SFR", "SFR_msun_yr", "sfr(msun/yr)"
