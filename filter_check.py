@@ -2,6 +2,8 @@
 Filter checking module to handle searching for erroneous filters that might exist.
 """
 
+from typing import Tuple
+
 valid_filters = [
     "FUV_GALEX",
     "NUV_GALEX",
@@ -54,76 +56,26 @@ valid_filters = [
     "Band_150MHz",
 ]
 
+inverse = ["_".join(filter_name.split("_")[::-1]) for filter_name in valid_filters]
 
-def validate_filter_name(input_string):
+
+def validate_filter(name: str) -> Tuple[bool, str | None]:
     """
-    Check if a string is attempting to use a filter name incorrectly.
-
-    Args:
-        input_string: The string to validate
-        valid_filters: List of valid filter names (e.g., ['FUV_GALEX', 'NUV_GALEX'])
-
-    Returns:
-        tuple: (is_valid, recommended_filter)
-            - is_valid: True if exact match or no violation, False if violation detected
-            - recommended_filter: The correct filter name if violation, None otherwise
+    Checks that the string doesn't contain some attempt at using a filter name and if it does
+    actively suggests the correct version.
     """
+    simplified_string = name.lower().replace("_", "")
+    # check cases are correct.
+    for filter_name in valid_filters:
+        if filter_name.replace("_", "").lower() in simplified_string:
+            if filter_name not in name:
+                return (False, filter_name)
 
-    # Check for exact match first
-    if input_string in valid_filters:
-        return (True, None)
+    # check inverse cases
+    for inverse_filter_name, filter_name in zip(inverse, valid_filters):
+        if inverse_filter_name.replace("_", "").lower() in simplified_string:
+            return (False, filter_name)
 
-    # Normalize for comparison (remove case, underscores, hyphens)
-    def normalize(s):
-        return s.lower().replace("_", "").replace("-", "")
-
-    # Remove common prefixes from input
-    input_lower = input_string.lower()
-    stripped_input = input_string
-    for prefix in ["filter", "filt", "band"]:
-        if input_lower.startswith(prefix):
-            # Check if what follows looks like it could be a filter
-            remainder = input_string[len(prefix) :]
-            if remainder and remainder[0].isupper():
-                # Only strip if next char is uppercase (e.g., filterFUV, bandW1)
-                stripped_input = remainder
-                input_lower = stripped_input.lower()
-                break
-
-    normalized_input = normalize(stripped_input)
-
-    # Check each valid filter
-    for valid_filter in valid_filters:
-        normalized_filter = normalize(valid_filter)
-
-        # Direct normalized match (handles case and underscores)
-        if normalized_input == normalized_filter:
-            return (False, valid_filter)
-
-        # Check if the input contains the filter parts in any order
-        # Split on underscores to get parts
-        filter_parts = valid_filter.lower().split("_")
-
-        # Check if all parts appear in the stripped input (in any order, any case)
-        all_parts_present = all(part in input_lower for part in filter_parts)
-
-        if all_parts_present and len(filter_parts) > 1:
-            # Don't flag if the string is much longer than the filter (e.g., FUV_GALEX_test)
-            # This indicates it's not trying to BE the filter, just contains it
-            length_ratio = len(normalized_input) / len(normalized_filter)
-            if length_ratio > 1.5:
-                continue
-
-            # Calculate a match score based on character overlap
-            # This helps distinguish between similar filters
-            overlap = sum(c in normalized_input for c in normalized_filter)
-            match_ratio = overlap / max(len(normalized_input), len(normalized_filter))
-
-            # If substantial overlap and all parts present, it's likely this filter
-            if match_ratio > 0.65:
-                return (False, valid_filter)
-
-    # No violation detected - either valid or doesn't match any filter
     return (True, None)
 
 
@@ -155,7 +107,7 @@ if __name__ == "__main__":
     print("Filter Validation Results:")
     print("-" * 80)
     for test in test_cases:
-        is_valid, recommended = validate_filter_name(test)
+        is_valid, recommended = validate_filter(test)
         status = "✓ VALID" if is_valid else "✗ VIOLATION"
         correction = f" → Use: {recommended}" if recommended else ""
         print(f"{status:12} | '{test:25}'{correction}")
