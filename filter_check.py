@@ -1,6 +1,7 @@
 """
 Filter checking module to handle searching for erroneous filters that might exist.
 """
+
 from typing import Tuple
 
 valid_filters = [
@@ -55,7 +56,8 @@ valid_filters = [
     "Band_150MHz",
 ]
 
-inverse = ["_".join(filter_name.split('_')[::-1]) for filter_name in valid_filters]
+inverse = ["_".join(filter_name.split("_")[::-1]) for filter_name in valid_filters]
+
 
 def validate_filter(name: str) -> Tuple[bool, str | None]:
     """
@@ -75,6 +77,7 @@ def validate_filter(name: str) -> Tuple[bool, str | None]:
             return (False, filter_name)
 
     return (True, None)
+
 
 # Example usage
 if __name__ == "__main__":
