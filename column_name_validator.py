@@ -206,7 +206,7 @@ class ColumnNameReport:
     protected_word: str | None
 
     def __post_init__(self) -> None:
-        self.valid = any(
+        self.valid = all(
             [
                 self.alpha_numeric,
                 self.starts_with_letter,
@@ -236,11 +236,6 @@ class ColumnNameReport:
             if passed:
                 return f"{GREEN}✓ PASS{RESET}"
             return f"{RED}✗ FAIL{RESET}"
-
-        # Print header
-        print(f"\n{BOLD}{'=' * 70}{RESET}")
-        print(f"{BOLD}Column Name Validation Report{RESET}")
-        print(f"{BOLD}{'=' * 70}{RESET}")
 
         # Overall status
         overall_color = GREEN if self.valid else RED
@@ -312,10 +307,10 @@ class ColumnNameReport:
             f"  No banned words:                              {allowed_status}{allowed_info}"
         )
 
-        print(f"{BOLD}{'=' * 70}{RESET}\n")
+        print(f"{'-' * 70}")
 
 
-def check_column_name(name: str) -> ColumnNameReport:
+def validate_column_name(name: str) -> ColumnNameReport:
     """
     Checks that the column names are correct and returns a report
     """

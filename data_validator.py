@@ -154,13 +154,13 @@ class DataValueReport:
             for column_name in self.columns_with_999:
                 no_999_info += f"\n    {YELLOW}→ Column '{column_name}' has -999 values. Using -999 as a None value is not permited."
         print(f"  No -999 in columns: {no_999_status}{no_999_info}")
+        print(f"{BOLD}{'=' * 70}{RESET}\n")
 
 
-def validate_table(table_name: str) -> DataValueReport:
+def validate_table(df: pl.DataFrame, table_name: str) -> DataValueReport:
     """
     Performs all the data validation checks on the given table.
     """
-    df = pl.read_parquet(table_name)
     ra_valid, ra_column_name = validate_ra(df)
     dec_valid, dec_column_name = validate_dec(df)
     no_999, columns_999 = check_no_minus_999(df)
