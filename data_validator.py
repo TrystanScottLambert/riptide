@@ -6,6 +6,8 @@ from enum import Enum
 from dataclasses import dataclass
 import polars as pl
 
+from status import Status, State
+
 
 class ClosedInterval(Enum):
     """
@@ -54,29 +56,36 @@ def _find_column(standard_root_name: str, data_frame: pl.DataFrame) -> str | Non
     return None
 
 
-def validate_ra(data_frame: pl.DataFrame, ra_column_name=None) -> bool:
+def validate_ra(data_frame: pl.DataFrame, ra_column_name=None) -> Status:
     """
     Checks that the ra column is correct.
     """
     if not ra_column_name:
         ra_column_name = _find_column("ra", data_frame)
-    return check_column_values(
+
+    valid = check_column_values(
         data_frame, ra_column_name, 0, 360, ClosedInterval.RIGHT
-    ), ra_column_name
+    )
+    if valid:
+        return Status(State.PASS, ra_column_name)
+    return Status(State.FAIL, ra_column_name)
 
 
-def validate_dec(data_frame: pl.DataFrame, dec_column_name=None) -> bool:
+def validate_dec(data_frame: pl.DataFrame, dec_column_name=None) -> Status:
     """
     Checks that the dec column is correct.
     """
     if not dec_column_name:
         dec_column_name = _find_column("dec", data_frame)
-    return check_column_values(
+    valid = check_column_values(
         data_frame, dec_column_name, -90, 90, ClosedInterval.BOTH
-    ), dec_column_name
+    )
+    if valid:
+        return Status(State.PASS, dec_column_name)
+    return Status(State.FAIL, dec_column_name)
 
 
-def check_no_minus_999(data_frame: pl.DataFrame) -> tuple[bool, list[str] | None]:
+def check_no_minus_999(data_frame: pl.DataFrame) -> Status:
     """
     Checks that there are no -999 values anywhere in the table.
 
@@ -93,21 +102,26 @@ def check_no_minus_999(data_frame: pl.DataFrame) -> tuple[bool, list[str] | None
             bad_columns.append(column.name)
     if len(bad_columns) == 0:
         bad_columns = None
-    return valid, bad_columns
+    if valid:
+        return Status(State.PASS)
+    return Status(State.FAIL, ";;;".join(bad_columns))
 
 
 @dataclass
 class DataValueReport:
     table_name: str
-    valid_ra: bool
-    valid_dec: bool
-    no_999: bool
-    ra_column_name: str | None
-    dec_column_name: str | None
-    columns_with_999: list[str] | None
+    valid_ra: Status
+    valid_dec: Status
+    no_999: Status
 
     def __post_init__(self) -> None:
-        self.valid = all([self.valid_ra, self.valid_dec, self.no_999])
+        self.valid = all(
+            [
+                self.valid_ra.state == State.PASS,
+                self.valid_dec.state == State.PASS,
+                self.no_999.state == State.PASS,
+            ]
+        )
 
     def print_report(self) -> None:
         """
@@ -121,10 +135,14 @@ class DataValueReport:
         YELLOW = "\033[93m"
 
         # Helper function for status
-        def status(passed: bool) -> str:
-            if passed:
-                return f"{GREEN}✓ PASS{RESET}"
-            return f"{RED}✗ FAIL{RESET}"
+        def status(given_status: Status) -> str:
+            match given_status.state:
+                case State.PASS:
+                    return f"{GREEN}✓ PASS{RESET}"
+                case State.FAIL:
+                    return f"{RED}✗ FAIL{RESET}"
+                case State.WARNING:
+                    return f"{YELLOW}⚠ WARNING"
 
         # Print header
         print(f"\n{BOLD}{'=' * 70}{RESET}")
@@ -141,18 +159,19 @@ class DataValueReport:
         print(f"{'-' * 70}")
 
         print(
-            f"  Valid RA column ('{self.ra_column_name}' in range [0, 360)): {status(self.valid_ra)}"
+            f"  Valid RA column ('{self.valid_ra.message}' in range [0, 360)): {status(self.valid_ra)}"
         )
 
         print(
-            f"  Valid Dec column ('{self.dec_column_name}' in range [-90, 90]): {status(self.valid_dec)}"
+            f"  Valid Dec column ('{self.valid_dec.message}' in range [-90, 90]): {status(self.valid_dec)}"
         )
 
         no_999_status = status(self.no_999)
         no_999_info = ""
-        if not self.no_999 and self.columns_with_999:
-            for column_name in self.columns_with_999:
-                no_999_info += f"\n    {YELLOW}→ Column '{column_name}' has -999 values. Using -999 as a None value is not permited.{RESET}"
+        if self.no_999.state == State.FAIL:
+            bad_columns = self.no_999.message.split(";;;")
+            for column_name in bad_columns:
+                no_999_info += f"\n    {RED}→ Column '{column_name}' has -999 values. Using -999 as a None value is not permited.{RESET}"
         print(f"  No -999 in columns: {no_999_status}{no_999_info}")
         print(f"{BOLD}{'=' * 70}{RESET}\n")
 
@@ -161,15 +180,12 @@ def validate_table(df: pl.DataFrame, table_name: str) -> DataValueReport:
     """
     Performs all the data validation checks on the given table.
     """
-    ra_valid, ra_column_name = validate_ra(df)
-    dec_valid, dec_column_name = validate_dec(df)
-    no_999, columns_999 = check_no_minus_999(df)
+    ra_valid = validate_ra(df)
+    dec_valid = validate_dec(df)
+    no_999 = check_no_minus_999(df)
     return DataValueReport(
         table_name,
         ra_valid,
         dec_valid,
         no_999,
-        ra_column_name,
-        dec_column_name,
-        columns_999,
     )

@@ -154,7 +154,7 @@ def check_allowed(name: str) -> Status:
             ratio = fuzz.ratio(na, word.lower())
             if ratio > 80:
                 return Status(State.FAIL, na)
-            if ratio > 50:
+            if ratio > 60:
                 return Status(State.WARNING, na)
 
     return Status(State.PASS)
@@ -250,15 +250,15 @@ class ColumnNameReport:
     def __post_init__(self) -> None:
         self.valid: bool = all(
             [
-                self.alpha_numeric == State.PASS,
-                self.starts_with_letter == State.PASS,
-                self.snake_case == State.PASS,
-                self.length == State.PASS,
-                self.no_decimals == State.PASS,
-                self.filter_name == State.PASS,
-                self.allowed_words == State.PASS,
-                self.no_exception_violation == State.PASS,
-                self.not_protected == State.PASS,
+                self.alpha_numeric.state == State.PASS,
+                self.starts_with_letter.state == State.PASS,
+                self.snake_case.state == State.PASS,
+                self.length.state == State.PASS,
+                self.no_decimals.state == State.PASS,
+                self.filter_name.state == State.PASS,
+                self.allowed_words.state == State.PASS,
+                self.no_exception_violation.state == State.PASS,
+                self.not_protected.state == State.PASS,
             ]
         )
 

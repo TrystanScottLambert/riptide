@@ -83,7 +83,7 @@ def check_filter(name: str) -> Status:
     # fuzzy finding for possible violations
     for filter_name in valid_filters:
         ratio = fuzz.ratio(filter_name.replace("_", "").lower(), simplified_string)
-        if ratio > 50:
+        if ratio > 60:
             return Status(State.WARNING, filter_name)
         if ratio > 80:
             return Status(State.FAIL, filter_name)
@@ -92,7 +92,7 @@ def check_filter(name: str) -> Status:
         ratio = fuzz.ratio(
             inverse_filter_name.replace("_", "").lower(), simplified_string
         )
-        if ratio > 50:
+        if ratio > 60:
             return Status(State.WARNING, filter_name)
         if ratio > 80:
             return Status(State.FAIL, filter_name)
