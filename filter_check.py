@@ -2,6 +2,7 @@
 Filter checking module to handle searching for erroneous filters that might exist.
 """
 
+from thefuzz import fuzz
 from status import Status, State
 
 valid_filters = [
@@ -64,6 +65,9 @@ def check_filter(name: str) -> Status:
     Checks that the string doesn't contain some attempt at using a filter name and if it does
     actively suggests the correct version.
     """
+    for filter_name in valid_filters:
+        if filter_name in name:
+            return Status(State.PASS)
     simplified_string = name.lower().replace("_", "")
     # check cases are correct.
     for filter_name in valid_filters:
@@ -76,7 +80,24 @@ def check_filter(name: str) -> Status:
         if inverse_filter_name.replace("_", "").lower() in simplified_string:
             return Status(State.FAIL, filter_name)
 
-    return Status(State.PASS, None)
+    # fuzzy finding for possible violations
+    for filter_name in valid_filters:
+        ratio = fuzz.ratio(filter_name.replace("_", "").lower(), simplified_string)
+        if ratio > 50:
+            return Status(State.WARNING, filter_name)
+        if ratio > 80:
+            return Status(State.FAIL, filter_name)
+
+    for inverse_filter_name, filter_name in zip(inverse, valid_filters):
+        ratio = fuzz.ratio(
+            inverse_filter_name.replace("_", "").lower(), simplified_string
+        )
+        if ratio > 50:
+            return Status(State.WARNING, filter_name)
+        if ratio > 80:
+            return Status(State.FAIL, filter_name)
+
+    return Status(State.PASS)
 
 
 # Example usage
