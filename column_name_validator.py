@@ -4,13 +4,25 @@ Module for validating parquet data ensuring tables follow the style standards.
 
 from dataclasses import dataclass
 
+from thefuzz import fuzz
+
 from status import Status, State
 from filter_check import check_filter, valid_filters
 
 MAX_COLUMN_LENGTH = 50
 WARN_COLUMN_LENGTH = 25
 EXCEPTIONS = ["uberID"]
-NOT_ALLOWED = ["fred", "bob", "thing", "something", "fr3d", "fr_ed"]
+NOT_ALLOWED = [
+    "fred",
+    "bob",
+    "thing",
+    "something",
+    "whatever",
+    "words",
+    "blahblahblah",
+    "abc123",
+    "xyz",
+]
 PROTECTED_WORD_LIST = {
     "ra": [
         "ascension",
@@ -135,7 +147,16 @@ def check_allowed(name: str) -> Status:
     """
     for na in NOT_ALLOWED:
         if na in name:
-            return (State.FAIL, na)
+            return Status(State.FAIL, na)
+    # fuzzy searching:
+    for na in NOT_ALLOWED:
+        for word in name.split("_"):
+            ratio = fuzz.ratio(na, word.lower())
+            if ratio > 80:
+                return Status(State.FAIL, na)
+            if ratio > 50:
+                return Status(State.WARNING, na)
+
     return Status(State.PASS)
 
 
