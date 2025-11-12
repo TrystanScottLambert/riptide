@@ -6,76 +6,107 @@ from dataclasses import dataclass
 
 
 from filter_check import validate_filter, valid_filters
+
 MAX_COLUMN_LENGTH = 30
 EXCEPTIONS = ["uberID"]
 NOT_ALLOWED = ["fred", "bob", "thing", "something", "fr3d", "fr_ed"]
 PROTECTED_WORD_LIST = {
     "ra": [
-        "ascension", "r.a.", "r a", "ra_deg", "ra (deg)", "ra degrees", "right_ascension", "ra_degrees"
+        "ascension",
+        "r.a.",
+        "r a",
+        "ra_deg",
+        "ra (deg)",
+        "ra degrees",
+        "right_ascension",
+        "ra_degrees",
     ],
-    "dec": [
-        "declination", "dec_deg", "dec (deg)", "dec degrees", "decl."
-    ],
+    "dec": ["declination", "dec_deg", "dec (deg)", "dec degrees", "decl."],
     "vel": [
-        "velocity", "vel_kms", "v_los", "vlos", "v_rad", "v(km/s)", "radial velocity"
+        "velocity",
+        "vel_kms",
+        "v_los",
+        "vlos",
+        "v_rad",
+        "v(km/s)",
+        "radial velocity",
     ],
-    "mag": [
-        "magnitude", "app_mag", "apparent magnitude", "m_app"
-    ],
-    "mag_abs": [
-        "absolute magnitude", "m_abs", "abs_mag", "Mmag", "M_abs"
-    ],
-    "err": [
-        "error", "uncertainty", "sigma", "stddev", "std", "measurement error"
-    ],
+    "mag": ["magnitude", "app_mag", "apparent magnitude", "m_app"],
+    "mag_abs": ["absolute magnitude", "m_abs", "abs_mag", "Mmag", "M_abs"],
+    "err": ["error", "uncertainty", "sigma", "stddev", "std", "measurement error"],
     "flux_density": [
-        "flux density", "f_nu", "fnu", "f_lambda", "flam", "fluxdens", "Snu"
+        "flux density",
+        "f_nu",
+        "fnu",
+        "f_lambda",
+        "flam",
+        "fluxdens",
+        "Snu",
     ],
-    "flux": [
-        "total flux", "measured flux", "int_flux", "integrated flux", "f"
-    ],
+    "flux": ["total flux", "measured flux", "int_flux", "integrated flux", "f"],
     "luminosity": [
-        "lum", "luminosity (erg/s)", "Lbol", "L_sun", "bolometric luminosity"
+        "lum",
+        "luminosity (erg/s)",
+        "Lbol",
+        "L_sun",
+        "bolometric luminosity",
     ],
-    "mass": [
-        "stellar mass", "M", "Msol", "mass_msun", "mstar", "Mstar", "msun"
-    ],
-    "sfr": [
-        "star formation rate", "SFR", "SFR_msun_yr", "sfr(msun/yr)"
-    ],
-    "metallicity": [
-        "gas metallicity", "stellar metallicity", "metal abundance"
-    ],
+    "mass": ["stellar mass", "M", "Msol", "mass_msun", "mstar", "Mstar", "msun"],
+    "sfr": ["star formation rate", "SFR", "SFR_msun_yr", "sfr(msun/yr)"],
+    "metallicity": ["gas metallicity", "stellar metallicity", "metal abundance"],
     "redshift": [
-        "zobs", "z_spec", "z_phot", "spectroscopic redshift", "photometric redshift", "zcos", "z_obs"
+        "zobs",
+        "z_spec",
+        "z_phot",
+        "spectroscopic redshift",
+        "photometric redshift",
+        "zcos",
+        "z_obs",
     ],
-    "snr": [
-        "signal to noise", "S/N", "sn_ratio", "signal/noise", "sn"
-    ],
-    "ew": [
-        "equivalent width", "eq width", "EW_line", "eqw"
-    ],
+    "snr": ["signal to noise", "S/N", "sn_ratio", "signal/noise", "sn"],
+    "ew": ["equivalent width", "eq width", "EW_line", "eqw"],
     "radius": [
-        "rad", "r_phys", "r_ang", "radii", "object radius", "r (arcsec)", "r (kpc)"
+        "rad",
+        "r_phys",
+        "r_ang",
+        "radii",
+        "object radius",
+        "r (arcsec)",
+        "r (kpc)",
     ],
-    "sersic_index": [
-        "n_sersic", "sersic n", "sersicn", "Sérsic index", "SersicN"
-    ],
-    "axrat": [
-        "axis ratio", "axial ratio", "b/a", "ellipticity", "axisratio"
-    ],
+    "sersic_index": ["n_sersic", "sersic n", "sersicn", "Sérsic index", "SersicN"],
+    "axrat": ["axis ratio", "axial ratio", "b/a", "ellipticity", "axisratio"],
     "ang": [
-        "angle", "angular measurement", "ang (deg)", "angular size", "theta", "phi"
+        "angle",
+        "angular measurement",
+        "ang (deg)",
+        "angular size",
+        "theta",
+        "phi",
     ],
     "pos_ang": [
-        "position angle", "pa", "posang", "P.A.", "PA(deg)", "position angle (deg)"
+        "position angle",
+        "pa",
+        "posang",
+        "P.A.",
+        "PA(deg)",
+        "position angle (deg)",
     ],
     "line_width": [
-        "linewidth", "line width", "FWHM", "sigma_line", "velocity width", "dispersion"
+        "linewidth",
+        "line width",
+        "FWHM",
+        "sigma_line",
+        "velocity width",
+        "dispersion",
     ],
     "sep": [
-        "separation", "sep_dist", "distance between", "angular separation", "physical separation"
-    ]
+        "separation",
+        "sep_dist",
+        "distance between",
+        "angular separation",
+        "physical separation",
+    ],
 }
 
 
@@ -88,13 +119,14 @@ def check_allowed(name: str) -> bool:
             return False, na
     return True, None
 
+
 def check_protected(name: str) -> bool:
     """
     Checks that protected names aren't being used in the tables.
     """
     for protected_word, common_words in PROTECTED_WORD_LIST.items():
         for word in common_words:
-            for target_word in name.split('_'):
+            for target_word in name.split("_"):
                 if word.lower() == target_word.lower():
                     return (False, protected_word)
     return (True, None)
@@ -159,7 +191,6 @@ class ColumnNameReport:
     """
 
     name: str
-    valid: bool
     alpha_numeric: bool
     starts_with_letter: bool
     snake_case: bool  # taking into account filters and exceptions
@@ -172,7 +203,22 @@ class ColumnNameReport:
     not_allowed_words: str | None
     suggested_filter_name: str | None
     exception_word: str | None
-    protected_word: str | None 
+    protected_word: str | None
+
+    def __post_init__(self) -> None:
+        self.valid = any(
+            [
+                self.alpha_numeric,
+                self.starts_with_letter,
+                self.snake_case,
+                self.length,
+                self.no_decimals,
+                self.filter_name,
+                self.allowed_words,
+                self.no_exception_violation,
+                self.not_protected,
+            ]
+        )
 
     def print_report(self):
         """
@@ -192,9 +238,9 @@ class ColumnNameReport:
             return f"{RED}✗ FAIL{RESET}"
 
         # Print header
-        print(f"\n{BOLD}{'='*70}{RESET}")
+        print(f"\n{BOLD}{'=' * 70}{RESET}")
         print(f"{BOLD}Column Name Validation Report{RESET}")
-        print(f"{BOLD}{'='*70}{RESET}")
+        print(f"{BOLD}{'=' * 70}{RESET}")
 
         # Overall status
         overall_color = GREEN if self.valid else RED
@@ -204,7 +250,7 @@ class ColumnNameReport:
 
         # Validation checks
         print(f"\n{BOLD}Validation Checks:{RESET}")
-        print(f"{'-'*70}")
+        print(f"{'-' * 70}")
 
         print(
             f"  Alphanumeric (letters, numbers, underscores): {status(self.alpha_numeric)}"
@@ -219,9 +265,13 @@ class ColumnNameReport:
         )
 
         length_status = status(self.length)
-        length_info = f" (length: {len(self.name)}/30)" if not self.length else ""
+        length_info = (
+            f" (length: {len(self.name)}/{MAX_COLUMN_LENGTH})"
+            if not self.length
+            else ""
+        )
         print(
-            f"  Length < 30 characters:                       {length_status}{length_info}"
+            f"  Length < {MAX_COLUMN_LENGTH} characters:                       {length_status}{length_info}"
         )
 
         print(
@@ -246,7 +296,6 @@ class ColumnNameReport:
             f"  Exception words in correct case:              {exception_status}{exception_info}"
         )
 
-        
         protected_status = status(self.not_protected)
         protected_info = ""
         if not self.not_protected and self.protected_word:
@@ -254,7 +303,6 @@ class ColumnNameReport:
         print(
             f"  Not violating protected standards:            {protected_status}{protected_info}"
         )
-
 
         allowed_status = status(self.allowed_words)
         allowed_info = ""
@@ -264,7 +312,7 @@ class ColumnNameReport:
             f"  No banned words:                              {allowed_status}{allowed_info}"
         )
 
-        print(f"{BOLD}{'='*70}{RESET}\n")
+        print(f"{BOLD}{'=' * 70}{RESET}\n")
 
 
 def check_column_name(name: str) -> ColumnNameReport:
@@ -280,22 +328,9 @@ def check_column_name(name: str) -> ColumnNameReport:
     allowed, banned_word = check_allowed(name)
     violates_exception, exception_word = check_exceptions(name)
     not_protected_word, protected_word = check_protected(name)
-    is_valid = all(
-        [
-            alphanumeric,
-            letter_start,
-            valid_length,
-            snake_case,
-            no_decimals,
-            valid_filter,
-            allowed,
-            violates_exception,
-            not_protected_word,
-        ]
-    )
+
     return ColumnNameReport(
         name=name,
-        valid=is_valid,
         alpha_numeric=alphanumeric,
         starts_with_letter=letter_start,
         snake_case=snake_case,
@@ -310,5 +345,3 @@ def check_column_name(name: str) -> ColumnNameReport:
         not_protected=not_protected_word,
         protected_word=protected_word,
     )
-
-
