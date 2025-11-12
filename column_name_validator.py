@@ -33,7 +33,7 @@ PROTECTED_WORD_LIST = {
     ],
     "mag": ["magnitude", "app_mag", "apparent magnitude", "m_app"],
     "mag_abs": ["absolute magnitude", "m_abs", "abs_mag", "Mmag", "M_abs"],
-    "err": ["error", "uncertainty", "sigma", "stddev", "std", "measurement error"],
+    "err": ["error", "uncertainty", "stddev", "std", "measurement error"],
     "flux_density": [
         "flux density",
         "f_nu",
@@ -52,7 +52,7 @@ PROTECTED_WORD_LIST = {
         "bolometric luminosity",
     ],
     "mass": ["stellar mass", "M", "Msol", "mass_msun", "mstar", "Mstar", "msun"],
-    "sfr": ["star formation rate", "SFR", "SFR_msun_yr", "sfr(msun/yr)"],
+    "sfr": ["star formation rate", "SFR_msun_yr", "sfr(msun/yr)"],
     "metallicity": ["gas metallicity", "stellar metallicity", "metal abundance"],
     "redshift": [
         "zobs",

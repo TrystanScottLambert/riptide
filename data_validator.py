@@ -152,7 +152,7 @@ class DataValueReport:
         no_999_info = ""
         if not self.no_999 and self.columns_with_999:
             for column_name in self.columns_with_999:
-                no_999_info += f"\n    {YELLOW}→ Column '{column_name}' has -999 values. Using -999 as a None value is not permited."
+                no_999_info += f"\n    {YELLOW}→ Column '{column_name}' has -999 values. Using -999 as a None value is not permited.{RESET}"
         print(f"  No -999 in columns: {no_999_status}{no_999_info}")
         print(f"{BOLD}{'=' * 70}{RESET}\n")
 
