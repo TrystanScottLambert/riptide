@@ -285,11 +285,11 @@ class ColumnNameReport:
         )
 
         length_status = status(self.length)
-        length_info = (
-            f" (length: {len(self.name)}/{MAX_COLUMN_LENGTH})"
-            if not self.length
-            else ""
-        )
+        length_info = ""
+        if self.length.state == State.WARNING:
+            length_info = f"\n    {YELLOW} → Length is valid but long ({len(self.name)}/{MAX_COLUMN_LENGTH}).{RESET}"
+        if self.length.state == State.FAIL:
+            length_info = f"\n     {RED} → Column name is too long ({len(self.name)}/{MAX_COLUMN_LENGTH}).{RESET}"
         print(
             f"  Length < {MAX_COLUMN_LENGTH} characters:                       {length_status}{length_info}"
         )
@@ -302,10 +302,10 @@ class ColumnNameReport:
         filter_info = ""
         if self.filter_name.state == State.FAIL:
             filter_info = (
-                f"\n    {RED}→ Required: Use '{self.filter_name.message}'{RESET}"
+                f"\n    {RED} → Required: Use '{self.filter_name.message}'{RESET}"
             )
         if self.filter_name.state == State.WARNING:
-            filter_info = f"\n    {YELLOW}→ Possible filter name violation: did you mean '{self.filter_name.message}'?{RESET}"
+            filter_info = f"\n    {YELLOW} → Possible filter name violation: did you mean '{self.filter_name.message}'?{RESET}"
 
         print(
             f"  Valid filter name usage:                      {filter_status}{filter_info}"
@@ -314,7 +314,7 @@ class ColumnNameReport:
         exception_status = status(self.no_exception_violation)
         exception_info = ""
         if self.no_exception_violation.state != State.PASS:
-            exception_info = f"\n    {RED}→ Required: Use correct case '{self.no_exception_violation.message}'{RESET}"
+            exception_info = f"\n    {RED} → Required: Use correct case '{self.no_exception_violation.message}'{RESET}"
         print(
             f"  Exception words in correct case:              {exception_status}{exception_info}"
         )
@@ -322,9 +322,9 @@ class ColumnNameReport:
         protected_status = status(self.not_protected)
         protected_info = ""
         if self.not_protected.state == State.WARNING:
-            protected_info = f"\n    {YELLOW}→ Protected word in use: Use correct form. Maybe '{self.not_protected.message}'?{RESET}"
+            protected_info = f"\n    {YELLOW} → Protected word in use: Use correct form. Maybe '{self.not_protected.message}'?{RESET}"
         if self.not_protected.state == State.FAIL:
-            protected_info = f"\n    {RED}→ Protected word in use: Use correct case: '{self.not_protected.message}'{RESET}"
+            protected_info = f"\n    {RED} → Protected word in use: Use correct case: '{self.not_protected.message}'{RESET}"
         print(
             f"  Not violating protected standards:            {protected_status}{protected_info}"
         )
@@ -332,9 +332,9 @@ class ColumnNameReport:
         allowed_status = status(self.allowed_words)
         allowed_info = ""
         if self.allowed_words.state == State.FAIL:
-            allowed_info = f"\n    {RED}→ Contains banned word: '{self.allowed_words.message}'{RESET}"
+            allowed_info = f"\n    {RED} → Contains banned word: '{self.allowed_words.message}'{RESET}"
         if self.allowed_words.state == State.WARNING:
-            allowed_info = f"\n    {YELLOW}→ Possible banned word: '{self.allowed_words.message}'{RESET}"
+            allowed_info = f"\n    {YELLOW} → Possible banned word: '{self.allowed_words.message}'{RESET}"
         print(
             f"  No banned words:                              {allowed_status}{allowed_info}"
         )
