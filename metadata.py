@@ -8,8 +8,8 @@ from enum import Enum
 import re
 from datetime import datetime
 import polars as pl
-
-
+import httpx
+import json
 from config import protected_words, filter_words, exceptions
 
 
@@ -78,6 +78,140 @@ class License(Enum):
 
 
 @dataclass
+class Columns:
+    columns: list[ColumnMetaData]
+
+    def __post_init__(self) -> None:
+        """
+        Organizing list into dictionary for quick searching.
+        """
+        self.columns: dict = {column.name: column for column in self.columns}
+
+    def set_info(self, column_name: str, info: str) -> None:
+        """
+        Sets the info field for the given column.
+        """
+        try:
+            self.columns[column_name].info = info
+        except KeyError:
+            raise ValueError(f"No column with the name '{column_name}' found.")
+
+    def get_info(self, column_name: str) -> str | None:
+        """
+        Returns the info for the given column.
+        """
+        try:
+            value = self.columns[column_name].info
+        except KeyError:
+            raise ValueError(f"No column with the name '{column_name}' found.")
+        return value
+
+    @property
+    def info(self) -> list[str]:
+        """
+        returns a list of all the info strings for all the columns.
+        """
+        return [column.info for column in self.columns.values()]
+
+    def set_unit(self, column_name: str, unit: str) -> None:
+        """
+        Sets the unit field for the given column.
+        """
+        try:
+            self.columns[column_name].unit = unit
+        except KeyError:
+            raise ValueError(f"No column with the name '{column_name}' found.")
+
+    def get_unit(self, column_name: str) -> None:
+        """
+        Returns the unit for the given column
+        """
+        try:
+            value = self.columns[column_name].unit
+        except KeyError:
+            raise ValueError(f"No column with the name '{column_name}' found.")
+        return value
+
+    @property
+    def units(self) -> list[str]:
+        """
+        Returns a list of all the unit strings for all the columns.
+        """
+        return [column.unit for column in self.columns.values()]
+
+    def set_ucd(self, column_name: str, ucd: str) -> None:
+        """
+        Sets the ucd field for the given column.
+        """
+        try:
+            self.columns[column_name].ucd = ucd
+        except KeyError:
+            raise ValueError(f"No column with the name '{column_name}' found.")
+
+    def get_ucd(self, column_name: str) -> str:
+        """
+        Returns the unit for the given column.
+        """
+        try:
+            value = self.columns[column_name].ucd
+        except KeyError:
+            raise ValueError(f"No column with the name '{column_name}' found.")
+        return value
+
+    @property
+    def ucds(self) -> list[str]:
+        """
+        Returns a list of all the ucds for all the columns.
+        """
+        return [column.ucd for column in self.columns.values()]
+
+    def set_minmax(self, column_name: str, min: float, max: float) -> None:
+        """
+        Sets the minimum and maximum values for the given column.
+        If the column is not numerica this will raise an error."
+        """
+        if self.columns[column_name].data_type == "string":
+            raise ValueError(
+                f"Cannot set the min max of a 'string' type column: '{column_name}'"
+            )
+        try:
+            self.columns[column_name].qc = MinMax(min=min, max=max)
+        except KeyError:
+            raise ValueError(f"No column with the name '{column_name}' found.")
+
+    def get_minmax(self, column_name: str) -> MinMax:
+        """
+        Returns the qc (min max) for the given column.
+        """
+        try:
+            value = self.columns[column_name].qc
+        except KeyError:
+            raise ValueError(f"No column with the name '{column_name}' found.")
+        return value
+
+    @property
+    def qcs(self) -> list[MinMax]:
+        """
+        Returns a list of all the qcs for all the columns.
+        """
+        [column.qc for column in self.columns.values()]
+
+    @property
+    def names(self) -> list[str]:
+        """
+        Returns a list of all the column names
+        """
+        return self.colunns.keys()
+
+    @property
+    def data_types(self) -> list[str]:
+        """
+        Returns a list of all the datatypes
+        """
+        return [column.data_type for column in self.columns.values()]
+
+
+@dataclass
 class MetaData:
     survey: SurveyName
     dataset: str
@@ -114,13 +248,39 @@ def _scrape_ucd(column_name: str) -> str:
                     current_ucds += protected_word.ucd
     for filter_word in filter_words:
         if filter_word.name in column_name:
-            print(filter_word.secondary_ucd)
             current_ucds += [filter_word.secondary_ucd]
     full_ucds = list(dict.fromkeys(";".join(current_ucds).split(";")))
     return ";".join(full_ucds)
 
 
-def fields_from_df(data_frame: pl.DataFrame) -> list[ColumnMetaData]:
+def _scrape_cds_ucd(column_name: str) -> str | None:
+    """
+    Makes a request to https://cdsweb.u-strasbg.fr/UCD/ucd-finder/ and returns best guess at ucd.
+    """
+    sanitized_string = column_name.translate(str.maketrans("-_.", "   "))
+    re = httpx.get(
+        f"https://cdsweb.u-strasbg.fr/UCD/ucd-finder/suggest?d={sanitized_string}"
+    )
+    re_dict = json.loads(re.text)
+    try:
+        return re_dict["ucd"][0]["ucd"]
+    except IndexError:
+        return None
+
+
+def guess_ucd(column_name: str, web_search: bool = True) -> str | None:
+    """
+    Looks for a WAVES ucd if it exists or else scrapes the CDS website.
+    """
+    ucd = _scrape_ucd(column_name)
+    if ucd == "" and web_search:
+        ucd = _scrape_cds_ucd(column_name)
+    return ucd
+
+
+def fields_from_df(
+    data_frame: pl.DataFrame, web_search: bool = True
+) -> list[ColumnMetaData]:
     """
     Automatically generating as much field metadata as possible.
 
@@ -128,9 +288,20 @@ def fields_from_df(data_frame: pl.DataFrame) -> list[ColumnMetaData]:
     official WAVES lookup table. If the search cds is True
     then any other column names will make requests to the cds website.
     """
-    column_names = data_frame.columns()
+    column_names = data_frame.columns
     # We are lucky here that datacentral adopts the polars datatypes lower cased.
-    data_types = [str(dtype).lower() for dtype in list(data_frame.dtype)]
-    mins = data_frame.min()
-    maxs = data_frame.max()
-    qcs = [MinMax(min, max) for min, max in zip(mins, maxs)]
+    data_types = [str(dtype).lower() for dtype in list(data_frame.dtypes)]
+
+    mins = data_frame.min().row(0)
+    maxs = data_frame.max().row(0)
+    qcs = [
+        MinMax(min, max) if not isinstance(min, str) else None
+        for min, max in zip(mins, maxs)
+    ]
+
+    ucds = [guess_ucd(column_name, web_search) for column_name in column_names]
+
+    field_data = []
+    for name, data_type, ucd, qc in zip(column_names, data_types, ucds, qcs):
+        field_data.append(ColumnMetaData(name, ucd, data_type, qc))
+    return field_data

@@ -37,8 +37,10 @@ mag:
   common_mistakes:
     - magnitude
     - app_mag
+    - ap_mag
     - apparent magnitude
     - m_app
+    - total_ap
   unit: ["mag"]
   ucd: ["phot.mag"]
 
@@ -46,6 +48,8 @@ mag_abs:
   common_mistakes:
     - absolute magnitude
     - m_abs
+    - total_ab_mag
+    - ab_mag
     - abs_mag
     - M_abs
   unit: ["mag"]
