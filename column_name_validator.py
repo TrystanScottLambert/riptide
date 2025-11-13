@@ -11,9 +11,9 @@ from status import Status, State
 from config import (
     MAX_COLUMN_LENGTH,
     WARN_COLUMN_LENGTH,
-    EXCEPTIONS,
     protected_words,
     filter_words,
+    exceptions,
 )
 
 NOT_ALLOWED = [
@@ -85,11 +85,11 @@ def check_exceptions(name: str) -> Status:
     Checks that if the exceptions exist that they are in the correct case.
     """
     real_string = name.replace("_", "")
-    for exc in EXCEPTIONS:
-        if exc.lower() in real_string.lower():
-            if exc in real_string:
+    for exc in exceptions:
+        if exc.name.lower() in real_string.lower():
+            if exc.name in real_string:
                 return Status(State.PASS)
-            return Status(State.FAIL, exc)
+            return Status(State.FAIL, exc.name)
     return Status(State.PASS)
 
 
@@ -125,8 +125,8 @@ def check_snake_case(name: str) -> Status:
     actual_string = name
     for filter_name in filter_words:
         actual_string = actual_string.replace(filter_name.name, "")
-    for exception in EXCEPTIONS:
-        actual_string = actual_string.replace(exception, "")
+    for exception in exceptions:
+        actual_string = actual_string.replace(exception.name, "")
     if actual_string == "":
         return Status(State.PASS)
     if actual_string.islower():

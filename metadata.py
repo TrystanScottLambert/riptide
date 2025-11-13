@@ -6,9 +6,11 @@ Helper functions for building the metadata for the datasets.
 from dataclasses import dataclass
 from enum import Enum
 import re
-import datetime
-
+from datetime import datetime
 import polars as pl
+
+
+from config import protected_words, filter_words, exceptions
 
 
 def _validate_email(email: str) -> bool:
@@ -63,11 +65,11 @@ class MinMax:
 @dataclass
 class ColumnMetaData:
     name: str
-    unit: str = None
-    info: str = None
     ucd: str
     data_type: str
     qc: MinMax
+    unit: str = None
+    info: str = None
 
 
 class License(Enum):
@@ -81,17 +83,41 @@ class MetaData:
     dataset: str
     table: str
     version: str
-    date: str = str(datetime.today()).split(" ")[0]
     author: Author
     coauthors: list[Author]
     dois: list[str]
     depends: list[Dependency]
     description: str
+    fields = list[ColumnMetaData]
+    date: str = str(datetime.today()).split(" ")[0]
     comments: str | list[str] = None
     license: License = None
     keywords: list[str] = None
     maml_version: str = "v1.1"
-    fields = list[ColumnMetaData]
+
+
+def _scrape_ucd(column_name: str) -> str:
+    """
+    Helper function will try to guess the ucd from the protected_words and filter configs.
+    """
+    current_ucds = []
+    for exception in exceptions:
+        if exception.name in column_name:
+            current_ucds += [exception.ucd]
+    for protected_word in protected_words:
+        if "_" in protected_word.name:
+            if protected_word.name in column_name:
+                current_ucds += protected_word.ucd
+        else:
+            for word in column_name.split("_"):
+                if word == protected_word.name:
+                    current_ucds += protected_word.ucd
+    for filter_word in filter_words:
+        if filter_word.name in column_name:
+            print(filter_word.secondary_ucd)
+            current_ucds += [filter_word.secondary_ucd]
+    full_ucds = list(dict.fromkeys(";".join(current_ucds).split(";")))
+    return ";".join(full_ucds)
 
 
 def fields_from_df(data_frame: pl.DataFrame) -> list[ColumnMetaData]:
@@ -108,4 +134,3 @@ def fields_from_df(data_frame: pl.DataFrame) -> list[ColumnMetaData]:
     mins = data_frame.min()
     maxs = data_frame.max()
     qcs = [MinMax(min, max) for min, max in zip(mins, maxs)]
-
