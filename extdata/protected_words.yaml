@@ -47,7 +47,6 @@ mag_abs:
     - absolute magnitude
     - m_abs
     - abs_mag
-    - Mmag
     - M_abs
   unit: ["mag"]
   ucd: ["phot.mag;phys.absMag"]
