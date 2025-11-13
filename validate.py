@@ -26,9 +26,12 @@ def validate_df(
 
     column_names = df.columns
     column_reports = [validate_column_name(column_name) for column_name in column_names]
+    
+    # Check if all column names are valid
+    names_valid = all(report.valid for report in column_reports)
+    
     if print_output:
         table_report.print_report()
-        names_valid = True
         BOLD = "\033[1m"
         RESET = "\033[0m"
 
@@ -40,7 +43,6 @@ def validate_df(
         for report in column_reports:
             if not report.valid:
                 report.print_report()
-                names_valid = False
 
         print(f"{'=' * 70}")
 
