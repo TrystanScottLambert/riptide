@@ -8,6 +8,8 @@ from enum import Enum
 import re
 import datetime
 
+import polars as pl
+
 
 def _validate_email(email: str) -> bool:
     """
@@ -36,6 +38,9 @@ class Author:
         if not _validate_email(self.email):
             raise ValueError("Email is not valid")
 
+    def __str__(self) -> None:
+        return f"{self.name.capitalize()} {self.surname.capitalize()} <{self.email}>"
+
 
 @dataclass
 class Dependency:
@@ -58,8 +63,8 @@ class MinMax:
 @dataclass
 class ColumnMetaData:
     name: str
-    unit: str
-    info: str
+    unit: str = None
+    info: str = None
     ucd: str
     data_type: str
     qc: MinMax
@@ -87,3 +92,20 @@ class MetaData:
     keywords: list[str] = None
     maml_version: str = "v1.1"
     fields = list[ColumnMetaData]
+
+
+def fields_from_df(data_frame: pl.DataFrame) -> list[ColumnMetaData]:
+    """
+    Automatically generating as much field metadata as possible.
+
+    This function will attempt to guess the ucd strings using the
+    official WAVES lookup table. If the search cds is True
+    then any other column names will make requests to the cds website.
+    """
+    column_names = data_frame.columns()
+    # We are lucky here that datacentral adopts the polars datatypes lower cased.
+    data_types = [str(dtype).lower() for dtype in list(data_frame.dtype)]
+    mins = data_frame.min()
+    maxs = data_frame.max()
+    qcs = [MinMax(min, max) for min, max in zip(mins, maxs)]
+

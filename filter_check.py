@@ -5,59 +5,10 @@ Filter checking module to handle searching for erroneous filters that might exis
 from thefuzz import fuzz
 from status import Status, State
 
-valid_filters = [
-    "FUV_GALEX",
-    "NUV_GALEX",
-    "u_SDSS",
-    "g_SDSS",
-    "r_SDSS",
-    "i_SDSS",
-    "z_SDSS",
-    "u_VST",
-    "g_VST",
-    "r_VST",
-    "i_VST",
-    "Z_VISTA",
-    "Y_VISTA",
-    "J_VISTA",
-    "H_VISTA",
-    "K_VISTA",
-    "W1_WISE",
-    "I1_Spitzer",
-    "I2_Spitzer",
-    "W2_WISE",
-    "I3_Spitzer",
-    "I4_Spitzer",
-    "W3_WISE",
-    "W4_WISE",
-    "M24_Spitzer",
-    "M70_Spitzer",
-    "P70_Herschel",
-    "P100_Herschel",
-    "P160_Herschel",
-    "S250_Herschel",
-    "S350_Herschel",
-    "S450_JCMT",
-    "S500_Herschel",
-    "S850_JCMT",
-    "Band_ionising_photons",
-    "Band9_ALMA",
-    "Band8_ALMA",
-    "Band7_ALMA",
-    "Band6_ALMA",
-    "Band5_ALMA",
-    "Band4_ALMA",
-    "Band3_ALMA",
-    "BandX_VLA",
-    "BandC_VLA",
-    "BandS_VLA",
-    "BandL_VLA",
-    "Band_610MHz",
-    "Band_325MHz",
-    "Band_150MHz",
-]
+from config import filter_words
 
-inverse = ["_".join(filter_name.split("_")[::-1]) for filter_name in valid_filters]
+WARNING_TOLERANCE_RATIO = 70
+FAIL_TOLERANCE_RATIO = 80
 
 
 def check_filter(name: str) -> Status:
@@ -65,37 +16,32 @@ def check_filter(name: str) -> Status:
     Checks that the string doesn't contain some attempt at using a filter name and if it does
     actively suggests the correct version.
     """
-    for filter_name in valid_filters:
-        if filter_name in name:
+    for filter_name in filter_words:
+        if filter_name.name in name:
             return Status(State.PASS)
     simplified_string = name.lower().replace("_", "")
     # check cases are correct.
-    for filter_name in valid_filters:
-        if filter_name.replace("_", "").lower() in simplified_string:
-            if filter_name not in name:
-                return Status(State.FAIL, filter_name)
+    for filter_name in filter_words:
+        if filter_name.name.replace("_", "").lower() in simplified_string:
+            if filter_name.name not in name:
+                return Status(State.FAIL, filter_name.name)
 
     # check inverse cases
-    for inverse_filter_name, filter_name in zip(inverse, valid_filters):
-        if inverse_filter_name.replace("_", "").lower() in simplified_string:
-            return Status(State.FAIL, filter_name)
+    for filter_name in filter_words:
+        if filter_name.inverse_name.replace("_", "").lower() in simplified_string:
+            return Status(State.FAIL, filter_name.name)
 
     # fuzzy finding for possible violations
-    for filter_name in valid_filters:
-        ratio = fuzz.ratio(filter_name.replace("_", "").lower(), simplified_string)
-        if ratio > 60:
-            return Status(State.WARNING, filter_name)
-        if ratio > 80:
-            return Status(State.FAIL, filter_name)
+    for filter_name in filter_words:
+        ratio = fuzz.ratio(filter_name.name.replace("_", "").lower(), simplified_string)
 
-    for inverse_filter_name, filter_name in zip(inverse, valid_filters):
-        ratio = fuzz.ratio(
-            inverse_filter_name.replace("_", "").lower(), simplified_string
+        ratio_inverse = fuzz.ratio(
+            filter_name.inverse_name.replace("_", "").lower(), simplified_string
         )
-        if ratio > 60:
-            return Status(State.WARNING, filter_name)
-        if ratio > 80:
-            return Status(State.FAIL, filter_name)
+        if ratio > WARNING_TOLERANCE_RATIO or ratio_inverse > WARNING_TOLERANCE_RATIO:
+            return Status(State.WARNING, filter_name.name)
+        if ratio > FAIL_TOLERANCE_RATIO or ratio_inverse > FAIL_TOLERANCE_RATIO:
+            return Status(State.FAIL, filter_name.name)
 
     return Status(State.PASS)
 
