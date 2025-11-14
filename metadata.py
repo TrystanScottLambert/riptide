@@ -71,6 +71,12 @@ class ColumnMetaData:
     unit: str = None
     info: str = None
 
+    def _is_missing(self) -> list[str]:
+        """
+        Returns a list of all the fields that are None.
+        """
+        return [field for field, value in self.__dict__.items() if not value]
+
 
 class License(Enum):
     PUBLIC = "Copyright WAVES [Private]"
@@ -79,13 +85,7 @@ class License(Enum):
 
 @dataclass
 class Columns:
-    columns: list[ColumnMetaData]
-
-    def __post_init__(self) -> None:
-        """
-        Organizing list into dictionary for quick searching.
-        """
-        self.columns: dict = {column.name: column for column in self.columns}
+    columns: dict[str, ColumnMetaData]
 
     def set_info(self, column_name: str, info: str) -> None:
         """
@@ -210,6 +210,27 @@ class Columns:
         """
         return [column.data_type for column in self.columns.values()]
 
+    def is_complete(self) -> bool:
+        """
+        Returns True if the columns have all the metadata and false if there are fields missing.
+        """
+        for column in self.columns.values():
+            if len(column._is_missing()) != 0:
+                return False
+        return True
+
+    def missing_values(self) -> dict[str, list[str]]:
+        """
+        Returns a dictonary of all the columns that have missing fields and what
+        those fields are.
+        """
+        missing_dict = {}
+        for column_name, column in self.columns.items():
+            missing_fields = column._is_missing()
+            if len(missing_fields) != 0:
+                missing_dict[column_name] = missing_fields
+        return missing_dict
+
 
 @dataclass
 class MetaData:
@@ -278,9 +299,7 @@ def guess_ucd(column_name: str, web_search: bool = True) -> str | None:
     return ucd
 
 
-def fields_from_df(
-    data_frame: pl.DataFrame, web_search: bool = True
-) -> list[ColumnMetaData]:
+def fields_from_df(data_frame: pl.DataFrame, web_search: bool = True) -> Columns:
     """
     Automatically generating as much field metadata as possible.
 
@@ -304,4 +323,5 @@ def fields_from_df(
     field_data = []
     for name, data_type, ucd, qc in zip(column_names, data_types, ucds, qcs):
         field_data.append(ColumnMetaData(name, ucd, data_type, qc))
-    return field_data
+
+    return Columns({column.name: column for column in field_data})
