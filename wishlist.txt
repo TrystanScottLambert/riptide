@@ -4,20 +4,16 @@
 
 [] Open maml files that already exist
 
-[] Save metadata to .maml
+[X] Save metadata to .maml
 
 [] Highlight the cases where maml data is missing and where it conflicts with the table.
 
 [] Allow users to enter their daml data
 
-[] name of the project autogens the names of the files
-
-[] save can be a separate thing or overwrite as an option
-
-[] button which automatically tries to fix everything.
+[] Name of the project autogens the names of the files
 
 []Login interface within datacentral
-    () automatically generates the version number of whatever dip
-    () checks that there is no naming conflicts and warns of other things
-    ()Allow downloads and uploads straight from the tool *
+    () Automatically generates the version number of whatever dip
+    () Checks that there is no naming conflicts and warns of other things
+    () Allow downloads and uploads straight from the tool *
 

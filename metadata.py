@@ -45,7 +45,7 @@ class Author:
         if not _is_valid_email(self.email):
             raise ValueError("Email is not valid")
 
-    def __str__(self) -> None:
+    def __str__(self):
         return f"{self.name.capitalize()} {self.surname.capitalize()} <{self.email}>"
 
 
@@ -70,11 +70,11 @@ class MinMax:
 @dataclass
 class ColumnMetaData:
     name: str
-    ucd: str
+    ucd: str | None
     data_type: str
-    qc: MinMax
-    unit: str = None
-    info: str = None
+    qc: MinMax | None
+    unit: str | None = None
+    info: str | None = None
 
     def _is_missing(self) -> list[str]:
         """
@@ -82,7 +82,7 @@ class ColumnMetaData:
         """
         return [field for field, value in self.__dict__.items() if not value]
 
-    def _to_maml_dict(self) -> None:
+    def _to_maml_dict(self) -> dict[str, str]:
         """
         Puts the column data into the format that can be passed to pymaml
         """
@@ -121,7 +121,7 @@ class Columns:
         return value
 
     @property
-    def info(self) -> list[str]:
+    def info(self) -> list[str | None]:
         """
         returns a list of all the info strings for all the columns.
         """
@@ -136,7 +136,7 @@ class Columns:
         except KeyError:
             raise ValueError(f"No column with the name '{column_name}' found.")
 
-    def get_unit(self, column_name: str) -> None:
+    def get_unit(self, column_name: str) -> str | None:
         """
         Returns the unit for the given column
         """
@@ -147,7 +147,7 @@ class Columns:
         return value
 
     @property
-    def units(self) -> list[str]:
+    def units(self) -> list[str | None]:
         """
         Returns a list of all the unit strings for all the columns.
         """
@@ -162,7 +162,7 @@ class Columns:
         except KeyError:
             raise ValueError(f"No column with the name '{column_name}' found.")
 
-    def get_ucd(self, column_name: str) -> str:
+    def get_ucd(self, column_name: str) -> str | None:
         """
         Returns the unit for the given column.
         """
@@ -173,7 +173,7 @@ class Columns:
         return value
 
     @property
-    def ucds(self) -> list[str]:
+    def ucds(self) -> list[str | None]:
         """
         Returns a list of all the ucds for all the columns.
         """
@@ -193,7 +193,7 @@ class Columns:
         except KeyError:
             raise ValueError(f"No column with the name '{column_name}' found.")
 
-    def get_minmax(self, column_name: str) -> MinMax:
+    def get_minmax(self, column_name: str) -> MinMax | None:
         """
         Returns the qc (min max) for the given column.
         """
@@ -204,18 +204,18 @@ class Columns:
         return value
 
     @property
-    def qcs(self) -> list[MinMax]:
+    def qcs(self) -> list[MinMax | None]:
         """
         Returns a list of all the qcs for all the columns.
         """
-        [column.qc for column in self.columns.values()]
+        return [column.qc for column in self.columns.values()]
 
     @property
     def names(self) -> list[str]:
         """
         Returns a list of all the column names
         """
-        return self.colunns.keys()
+        return list(self.columns.keys())
 
     @property
     def data_types(self) -> list[str]:
@@ -262,12 +262,12 @@ class MetaData:
     description: str
     fields: Columns
     date: str = str(datetime.today()).split(" ")[0]
-    coauthors: list[Author] = None
-    comments: str | list[str] = None
-    license: License = None
-    keywords: list[str] = None
-    dois: list[Doi] = None
-    depends: list[Dependency] = None
+    coauthors: list[Author] | None = None
+    comments: str | list[str] | None = None
+    license: License | None = None
+    keywords: list[str] | None = None
+    dois: list[Doi] | None = None
+    depends: list[Dependency] | None = None
     maml_version: str = "v1.1"
 
     def to_maml(self, file_name: str) -> None:
