@@ -1,26 +1,23 @@
-Open fits, csv, and parquet files for data and autogen the maml
+[X] Open fits, csv, and parquet files for data and autogen the maml (Data can be autogened from the df)
 
-Autogen maml and allow users to fill in the missing maml.
+[X] Autogen maml and allow users to fill in the missing maml.
 
-Open maml files that already exist
+[] Open maml files that already exist
 
-Highlight the cases where maml data is missing and where it conflicts with the table.
+[] Save metadata to .maml
 
-Allow users to enter their daml data
+[] Highlight the cases where maml data is missing and where it conflicts with the table.
 
-name of the project autogens the names of the files
+[] Allow users to enter their daml data
 
-save can be a separate thing or overwrite as an option
+[] name of the project autogens the names of the files
 
-button which automatically tries to fix everything.
+[] save can be a separate thing or overwrite as an option
 
-Login interface within datacentral
-- automatically generates the version number of whatever dip
-- checks that there is no naming conflicts and warns of other things
-- Allow downloads and uploads straight from the tool *
+[] button which automatically tries to fix everything.
 
-new file button for maml data.
+[]Login interface within datacentral
+    () automatically generates the version number of whatever dip
+    () checks that there is no naming conflicts and warns of other things
+    ()Allow downloads and uploads straight from the tool *
 
-new table_notes button (select from the data that already exists)
-new rip notes button (creates one based on the folder name and will error if one already exists)
-markdown render when you select the markdown.

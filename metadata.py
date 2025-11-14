@@ -10,6 +10,9 @@ from datetime import datetime
 import polars as pl
 import httpx
 import json
+
+from pymaml.maml import MAMLBuilder
+
 from config import protected_words, filter_words, exceptions
 
 
@@ -78,6 +81,15 @@ class ColumnMetaData:
         Returns a list of all the fields that are None.
         """
         return [field for field, value in self.__dict__.items() if not value]
+
+    def _to_maml_dict(self) -> None:
+        """
+        Puts the column data into the format that can be passed to pymaml
+        """
+        qc = self.qc.__dict__
+        maml_dict = self.__dict__
+        maml_dict["qc"] = qc
+        return maml_dict
 
 
 class License(Enum):
@@ -235,22 +247,64 @@ class Columns:
 
 
 @dataclass
+class Doi:
+    doi: str
+    doi_type: str
+
+
+@dataclass
 class MetaData:
     survey: SurveyName
     dataset: str
     table: str
     version: str
     author: Author
-    coauthors: list[Author]
-    dois: list[str]
-    depends: list[Dependency]
     description: str
-    fields = list[ColumnMetaData]
+    fields = Columns
     date: str = str(datetime.today()).split(" ")[0]
+    coauthors: list[Author] = None
     comments: str | list[str] = None
     license: License = None
     keywords: list[str] = None
+    dois: list[Doi] = None
+    depends: list[Dependency] = None
     maml_version: str = "v1.1"
+
+    def to_maml(self, file_name: str) -> None:
+        """
+        Writing the metadata to a maml file.
+        """
+        # Required
+        builder = MAMLBuilder(self.maml_version)
+        builder.set("survey", self.survey)
+        builder.set("dataset", self.dataset)
+        builder.set("table", self.table)
+        builder.set("version", self.version)
+        builder.set("author", str(self.Author))
+        builder.set("description", str(self.description))
+        builder.set("date", self.date)
+        builder.set("MAML_version", self.maml_version)
+        for field in self.fields:
+            builder.add("fields", field._to_maml_dict())
+
+        # Optional
+        if self.coauthors:
+            for author in self.coauthors:
+                builder.add("coauthors", str(author))
+        if self.dois:
+            for doi in self.dois:
+                builder.add("DOIs", {"DOI": doi.doi, "type": doi.doi_type})
+        if self.depends:
+            for denendency in self.depends:
+                builder.add("survey", denendency.__dict__)
+        if self.comments:
+            for comment in self.comments:
+                builder.add("comments", comment)
+        if self.license:
+            builder.set("license", self.license)
+        if self.keywords:
+            for keyword in self.keywords:
+                builder.add("keywords", keyword)
 
 
 def _scrape_ucd(column_name: str) -> str:
