@@ -260,7 +260,7 @@ class MetaData:
     version: str
     author: Author
     description: str
-    fields = Columns
+    fields: Columns
     date: str = str(datetime.today()).split(" ")[0]
     coauthors: list[Author] = None
     comments: str | list[str] = None
@@ -280,11 +280,11 @@ class MetaData:
         builder.set("dataset", self.dataset)
         builder.set("table", self.table)
         builder.set("version", self.version)
-        builder.set("author", str(self.Author))
+        builder.set("author", str(self.author))
         builder.set("description", str(self.description))
         builder.set("date", self.date)
-        builder.set("MAML_version", self.maml_version)
-        for field in self.fields:
+        builder.set("MAML_version", self.maml_version.replace("v", ""))
+        for field in self.fields.columns.values():
             builder.add("fields", field._to_maml_dict())
 
         # Optional
@@ -305,6 +305,8 @@ class MetaData:
         if self.keywords:
             for keyword in self.keywords:
                 builder.add("keywords", keyword)
+        maml = builder.build()
+        maml.to_file(file_name)
 
 
 def _scrape_ucd(column_name: str) -> str:
