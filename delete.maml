@@ -1,0 +1,29 @@
+survey: WAVES
+dataset: group_catalog
+table: groups
+version: '0.1'
+date: '2025-11-14'
+author: Trystan Lambert <trystan.lambert@uwa.edu.au>
+description: This is what the group catalogue looks like.
+comments:
+- You shouldn't use this.
+- This is a test
+license: MIT
+MAML_version: 1.1
+fields:
+- name: ra
+  unit: deg
+  info: this is the right ascension
+  ucd: pos.eq.ra
+  data_type: float32
+  qc:
+    min: 0.0
+    max: 360.0
+- name: dec
+  unit: deg
+  info: this is declination.
+  ucd: pos.eq.dec
+  data_type: float32
+  qc:
+    min: -90.0
+    max: 90.0
