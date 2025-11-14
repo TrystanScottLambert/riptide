@@ -13,11 +13,13 @@ import json
 from config import protected_words, filter_words, exceptions
 
 
-def _validate_email(email: str) -> bool:
+def _is_valid_email(email: str) -> bool:
     """
-    Checking that an email is correct.
+    Checking that an email is correct. Very basic validation checking . and @
     """
-    return re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email)
+    if re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email):
+        return True
+    return False
 
 
 class SurveyName(Enum):
@@ -37,7 +39,7 @@ class Author:
         """
         Validating email.
         """
-        if not _validate_email(self.email):
+        if not _is_valid_email(self.email):
             raise ValueError("Email is not valid")
 
     def __str__(self) -> None:
